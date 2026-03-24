@@ -7,8 +7,8 @@ import categoryService from './services/categoryService';
 
 /**
  * Main Application Component
- * Handles the authentication gate, fetches note data, manages the dashboard,
- * and handles Phase 2 requirements (category filtering).
+ * Handles authentication, fetching data, Phase 2 filtering, 
+ * and dynamic UI theming (Fonts & Colors).
  */
 function App() {
   // --- 1. State Definitions ---
@@ -17,20 +17,21 @@ function App() {
   
   // Phase 2: Category States
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null); // null means "All categories"
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // Toggle between Active and Archived notes view
+  // Toggle between Active and Archived notes
   const [showingArchived, setShowingArchived] = useState(false);
   
   // Modal states
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentNote, setCurrentNote] = useState(null);
 
+  // --- EXTRA: Theming States ---
+  const [currentFont, setCurrentFont] = useState('font-sans'); // Default font
+  const [colorTheme, setColorTheme] = useState(''); // Default color (no hue-rotate)
+
   // --- 2. Side Effects ---
 
-  /**
-   * Fetches active or archived notes based on the current view state.
-   */
   useEffect(() => {
     const fetchNotes = async () => {
       try {
@@ -51,10 +52,6 @@ function App() {
     }
   }, [isAuthenticated, showingArchived]);
 
-  /**
-   * Phase 2: Fetches all available categories for the filter bar.
-   * Re-runs when the form closes in case the user created a new category.
-   */
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -72,10 +69,6 @@ function App() {
 
   // --- 3. Derived State (Filtering) ---
 
-  /**
-   * Filters the notes array based on the currently selected category.
-   * If selectedCategory is null, it shows all notes in the current view.
-   */
   const displayedNotes = selectedCategory
     ? notes.filter(note => note.categories && note.categories.some(c => c.id === selectedCategory))
     : notes;
@@ -139,7 +132,8 @@ function App() {
   // --- 6. Main UI Structure ---
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-indigo-500/30">
+    // Dynamic Theming applied here to the root div (currentFont and colorTheme)
+    <div className={`min-h-screen bg-slate-900 text-white selection:bg-indigo-500/30 transition-all duration-500 ${currentFont} ${colorTheme}`}>
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         
         {/* Dashboard Header */}
@@ -148,27 +142,66 @@ function App() {
             {showingArchived ? 'Archived Notes' : 'My Notes'}
           </h1>
           
-          <div className="flex flex-wrap gap-3 justify-center">
+          <div className="flex flex-wrap gap-3 justify-center items-center">
+            
+            {/* EXTRA: Theming Controls */}
+            <div className="flex space-x-2 bg-slate-800/50 p-1.5 rounded-xl border border-slate-700">
+              
+              {/* Font Selector */}
+              <select 
+                value={currentFont} 
+                onChange={(e) => setCurrentFont(e.target.value)}
+                className="bg-transparent text-xs text-slate-300 font-semibold focus:outline-none cursor-pointer"
+                title="Change Font Style"
+              >
+                <option value="font-sans">Sans (Modern)</option>
+                <option value="font-serif">Serif (Classic)</option>
+                <option value="font-mono">Mono (Code)</option>
+                <option value="font-[cursive]">Cursive (Playful)</option>
+                <option value="font-[fantasy]">Fantasy (Bold)</option>
+              </select>
+              
+              <div className="w-px bg-slate-600"></div>
+              
+              {/* Color Theme Selector */}
+              <select 
+                value={colorTheme} 
+                onChange={(e) => setColorTheme(e.target.value)}
+                className="bg-transparent text-xs text-slate-300 font-semibold focus:outline-none cursor-pointer"
+                title="Change Color Theme"
+              >
+                <option value="">Indigo (Default)</option>
+                <option value="hue-rotate-[270deg]">Emerald</option>
+                <option value="hue-rotate-90">Rose</option>
+                <option value="hue-rotate-180">Amber</option>
+                <option value="grayscale">Noir (B&W)</option>
+              </select>
+
+            </div>
+
+            {/* Toggle Archived/Active */}
             <button 
               onClick={() => setShowingArchived(!showingArchived)}
-              className={`px-5 py-2 text-sm font-bold rounded-xl border transition-all active:scale-95 focus:outline-none ${
+              className={`px-4 py-2 text-sm font-bold rounded-xl border transition-all active:scale-95 focus:outline-none ${
                 showingArchived 
                   ? 'border-yellow-500 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-600 hover:text-white' 
                   : 'border-slate-500 bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
-              {showingArchived ? 'View Active Notes' : 'View Archived'}
+              {showingArchived ? 'View Active' : 'View Archived'}
             </button>
 
+            {/* New Note */}
             <button 
               onClick={handleOpenCreateForm}
-              className="px-5 py-2 text-sm font-bold rounded-xl border border-indigo-500 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all shadow-lg shadow-indigo-500/20 active:scale-95 focus:outline-none"
+              className="px-4 py-2 text-sm font-bold rounded-xl border border-indigo-500 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all shadow-lg shadow-indigo-500/20 active:scale-95 focus:outline-none"
             >
               + New Note
             </button>
             
+            {/* Logout */}
             <button 
-              className="px-5 py-2 text-sm font-bold rounded-xl border border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white transition-all active:scale-95 focus:outline-none" 
+              className="px-4 py-2 text-sm font-bold rounded-xl border border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white transition-all active:scale-95 focus:outline-none" 
               onClick={() => setIsAuthenticated(false)}
             >
               Logout
@@ -179,8 +212,6 @@ function App() {
         {/* Phase 2: Category Filter Bar */}
         <div className="flex flex-wrap items-center gap-2 mb-8">
           <span className="text-sm font-medium text-slate-400 mr-2">Filter by:</span>
-          
-          {/* "All" Button */}
           <button
             onClick={() => setSelectedCategory(null)}
             className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all ${
@@ -191,8 +222,6 @@ function App() {
           >
             All
           </button>
-          
-          {/* Dynamic Category Buttons */}
           {categories.map(category => (
             <button
               key={category.id}
