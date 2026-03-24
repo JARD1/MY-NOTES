@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import NoteCard from './components/NoteCard';
+import NoteForm from './components/NoteForm';
 import noteService from './services/noteService';
 
 /**
  * Main Application Component
  * Handles the authentication gate, fetches note data from the Spring Boot API,
- * and manages the main dashboard layout using Tailwind CSS.
+ * manages the main dashboard layout, and handles CRUD operations for notes.
  */
 function App() {
   // --- 1. State Definitions ---
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [notes, setNotes] = useState([]);
+  
+  // States to manage the NoteForm Modal
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [currentNote, setCurrentNote] = useState(null);
 
   // --- 2. Side Effects ---
 
@@ -20,11 +25,6 @@ function App() {
    * If authenticated, it fetches active notes from the backend.
    */
   useEffect(() => {
-    /**
-     * Internal async function to fetch notes.
-     * Defined inside the effect to avoid ESLint warnings regarding 
-     * synchronous state updates and closure scope.
-     */
     const fetchActiveNotes = async () => {
       try {
         const data = await noteService.getActiveNotes();
@@ -39,16 +39,64 @@ function App() {
     }
   }, [isAuthenticated]);
 
-  // --- 3. Event Handlers ---
+  // --- 3. Event Handlers (CRUD Operations) ---
 
-  /** Placeholder for editing a note */
-  const handleEdit = (note) => console.log("Edit requested for note ID:", note.id);
-  
-  /** Placeholder for archiving a note */
-  const handleArchive = (id) => console.log("Archive requested for note ID:", id);
-  
-  /** Placeholder for deleting a note */
-  const handleDelete = (id) => console.log("Delete requested for note ID:", id);
+  /** Opens the form modal to create a completely new note */
+  const handleOpenCreateForm = () => {
+    setCurrentNote(null); // Ensure form is empty
+    setIsFormOpen(true);
+  };
+
+  /** Opens the form modal and pre-fills it with the selected note's data */
+  const handleEdit = (note) => {
+    setCurrentNote(note);
+    setIsFormOpen(true);
+  };
+
+  /** * Handles saving a note (both Create and Update).
+   * Communicates with the backend and updates the local UI state.
+   */
+  const handleFormSubmit = async (noteData) => {
+    try {
+      if (currentNote) {
+        // UPDATE Existing Note
+        const updatedNote = await noteService.updateNote(currentNote.id, noteData);
+        // Map through existing notes and replace the updated one to refresh the UI immediately
+        setNotes(notes.map(n => n.id === currentNote.id ? updatedNote : n));
+      } else {
+        // CREATE New Note
+        const newNote = await noteService.createNote(noteData);
+        // Add the new note to the beginning of the list in the UI
+        setNotes([newNote, ...notes]);
+      }
+    } catch (error) {
+      console.error("Error saving the note:", error);
+      alert("There was an error saving your note. Please check the console.");
+    }
+  };
+
+  /** Archives a note and removes it from the active notes view */
+  const handleArchive = async (id) => {
+    try {
+      await noteService.toggleArchiveStatus(id);
+      // Remove it from the current active list UI
+      setNotes(notes.filter(n => n.id !== id));
+    } catch (error) {
+      console.error("Error archiving note:", error);
+    }
+  };
+
+  /** Deletes a note permanently from the database and the UI */
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this note permanently?")) return;
+    
+    try {
+      await noteService.deleteNote(id);
+      setNotes(notes.filter(n => n.id !== id));
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    }
+  };
 
   // --- 4. Render Logic (Auth Gate) ---
 
@@ -68,11 +116,13 @@ function App() {
             My Notes
           </h1>
           <div className="flex space-x-4">
-            {/* Action button to open the Note Creation form (Phase 1) */}
-            <button className="px-5 py-2.5 text-sm font-bold rounded-xl border border-indigo-500 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all shadow-lg shadow-indigo-500/20 active:scale-95 focus:outline-none">
+            {/* Action button opens the modal */}
+            <button 
+              onClick={handleOpenCreateForm}
+              className="px-5 py-2.5 text-sm font-bold rounded-xl border border-indigo-500 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all shadow-lg shadow-indigo-500/20 active:scale-95 focus:outline-none"
+            >
               + New Note
             </button>
-            {/* Logout button to reset authentication state */}
             <button 
               className="px-5 py-2.5 text-sm font-bold rounded-xl border border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white transition-all active:scale-95 focus:outline-none" 
               onClick={() => setIsAuthenticated(false)}
@@ -104,6 +154,15 @@ function App() {
         )}
 
       </div>
+
+      {/* Note Form Modal */}
+      <NoteForm 
+        isOpen={isFormOpen} 
+        onClose={() => setIsFormOpen(false)} 
+        onSubmit={handleFormSubmit}
+        initialData={currentNote}
+      />
+
     </div>
   );
 }
