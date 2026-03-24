@@ -15,7 +15,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/notes")
-@CrossOrigin(origins = "*") // Allows access from any origin (useful for local development)
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class NoteController {
 
@@ -33,6 +33,15 @@ public class NoteController {
         return ResponseEntity.ok(noteService.getArchivedNotes());
     }
 
+    // ==============================================================
+    // PHASE 2: FILTERING BY CATEGORY ENDPOINT
+    // ==============================================================
+    // GET: /api/notes/category/{categoryId} - Lists notes that have a specific tag
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<Note>> getNotesByCategory(@PathVariable Long categoryId) {
+        return ResponseEntity.ok(noteService.getNotesByCategory(categoryId));
+    }
+
     // POST: /api/notes - Creates a new note
     @PostMapping
     public ResponseEntity<Note> createNote(@RequestBody Note note) {
@@ -43,7 +52,6 @@ public class NoteController {
     // PUT: /api/notes/{id} - Updates an existing note
     @PutMapping("/{id}")
     public ResponseEntity<Note> updateNote(@PathVariable Long id, @RequestBody Note note) {
-        // Ensure the ID in the path matches the entity to update
         note.setId(id);
         Note updatedNote = noteService.saveNote(note);
         return ResponseEntity.ok(updatedNote);
