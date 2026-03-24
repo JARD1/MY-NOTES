@@ -10,6 +10,7 @@ import java.util.List;
 
 /**
  * REST Controller providing endpoints for Categories (Tags).
+ * Essential for Phase 2: Tag application and filtering.
  */
 @RestController
 @RequestMapping("/api/categories")
@@ -23,5 +24,25 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<List<Category>> getAllCategories() {
         return ResponseEntity.ok(categoryRepository.findAll());
+    }
+
+    // POST: /api/categories - Creates a new category
+    @PostMapping
+    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
+        // Basic validation to avoid saving empty tags
+        if (category.getName() == null || category.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(categoryRepository.save(category));
+    }
+
+    // DELETE: /api/categories/{id} - Deletes a category by ID
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        if (!categoryRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        categoryRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
