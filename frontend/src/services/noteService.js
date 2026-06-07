@@ -4,7 +4,7 @@ import axios from 'axios';
  * Base URL for the Spring Boot Backend API.
  * This must match the port where your Java server is running.
  */
-const API_URL = 'http://localhost:8080/api/notes';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/notes';
 
 /**
  * Service object containing all HTTP requests related to Notes.

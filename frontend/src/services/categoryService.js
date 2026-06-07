@@ -3,7 +3,7 @@ import axios from 'axios';
 /**
  * Base URL for the Spring Boot Backend Categories API.
  */
-const API_URL = 'http://localhost:8080/api/categories';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/notes';
 
 /**
  * Service object containing HTTP requests related to Categories (Tags).
