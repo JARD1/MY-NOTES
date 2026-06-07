@@ -1,9 +1,13 @@
 import axios from 'axios';
 
 /**
- * Base URL for the Spring Boot Backend Categories API.
+ * Base URL for the Spring Boot Backend API.
+ * In production, VITE_API_URL should be 'https://my-notes-backend-otzz.onrender.com/api'
  */
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/notes';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
+// We append the specific endpoint for categories
+const API_URL = `${API_BASE}/categories`;
 
 /**
  * Service object containing HTTP requests related to Categories (Tags).

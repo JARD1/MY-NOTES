@@ -2,9 +2,12 @@ import axios from 'axios';
 
 /**
  * Base URL for the Spring Boot Backend API.
- * This must match the port where your Java server is running.
+ * In production, VITE_API_URL should be 'https://my-notes-backend-otzz.onrender.com/api'
  */
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/notes';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
+// We append the specific endpoint for notes
+const API_URL = `${API_BASE}/notes`;
 
 /**
  * Service object containing all HTTP requests related to Notes.
